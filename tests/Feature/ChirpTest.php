@@ -69,13 +69,32 @@ class ChirpTest extends TestCase
     public function test_les_chirps_sont_affiches_sur_la_page_d_accueil()
     {
         $user = User::factory()->create();
-        $chirps = ChirpFactory::new()->count(3)->create(['user_id' => $user->id]);
         $this->actingAs($user);
-
         $this->assertAuthenticatedAs($user);
-        $reponse = $this->get('chirps/index');
+
+        $chirps = ChirpFactory::new()->count(3)->create(['user_id' => $user->id]);
+        
+        $reponse = $this->get('/chirps/index');
         foreach ($chirps as $chirp) {
             $reponse->assertSee($chirp->contenu);
         }
+    }
+
+    // test pour permettre à un utilisateur de modifier son propre chirp
+    public function test_un_utilisateur_peut_modifier_son_chirp()
+    {
+        $utilisateur = User::factory()->create();
+        $chirp = ChirpFactory::new()->create(['user_id' => $utilisateur->id]);
+        $this->actingAs($utilisateur);
+        $reponse = $this->put("/chirps/{$chirp->id}", [
+        'message' => 'Chirp modifié'
+        ]);
+        $reponse->assertStatus(302);
+
+        // Vérifie si le chirp existe dans la base de donnée.
+        $this->assertDatabaseHas('chirps', [
+        'id' => $chirp->id,
+        'message' => 'Chirp modifié',
+        ]);
     }
 }
