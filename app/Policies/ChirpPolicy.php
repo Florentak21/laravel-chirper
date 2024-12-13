@@ -29,7 +29,7 @@ class ChirpPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return $user->chirps()->count() < 10;
     }
 
     /**

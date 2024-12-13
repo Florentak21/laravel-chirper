@@ -168,4 +168,23 @@ class ChirpTest extends TestCase
         ]);
         $reponse->assertSessionHasErrors(['message']);
     }
+
+    // test pour limiter le nombre de Chirp possible de créer à 10 pour un utilisateur
+    public function test_limiter_le_nombre_de_chirp_possible_de_creer_a_10_pour_un_utilisateur()
+    {
+        $utilisateur = User::factory()->create();
+        $this->actingAs($utilisateur);
+    
+        ChirpFactory::new()->count(10)->create(['user_id' => $utilisateur->id]);
+    
+        $reponse = $this->post('/chirps', [
+            'message' => 'Chirp numéro 11',
+        ]);
+    
+        $reponse->assertStatus(403);
+    
+        $this->assertDatabaseMissing('chirps', [
+            'message' => 'Chirp numéro 11',
+        ]);
+    }    
 }
