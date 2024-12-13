@@ -19,6 +19,7 @@ class ChirpTest extends TestCase
         $response->assertStatus(200);
     }
 
+    // test pour permettre à un utilisateur  de créer un chirp
     public function test_un_utilisateur_peut_creer_un_chirp()
     {
         // Simuler un utilisateur connecté
@@ -36,5 +37,27 @@ class ChirpTest extends TestCase
         'message' => 'Mon premier chirp !',
         'user_id' => $utilisateur->id,
         ]);
+    }
+
+    // test pour empecher que le contenu d'un chirp soit vide
+    public function test_un_chirp_ne_peut_pas_avoir_un_contenu_vide()
+    {
+        $utilisateur = User::factory()->create();
+        $this->actingAs($utilisateur);
+        $reponse = $this->post('/chirps', [
+        'message' => ''
+        ]);
+        $reponse->assertSessionHasErrors(['message']);
+    }
+
+    // test pour empecher le contenu d'un chirp de dépasser 255 caractère
+    public function test_un_chirp_ne_peut_pas_depasse_255_caracteres()
+    {
+        $utilisateur = User::factory()->create();
+        $this->actingAs($utilisateur);
+        $reponse = $this->post('/chirps', [
+        'message' => str_repeat('a', 256)
+        ]);
+        $reponse->assertSessionHasErrors(['message']);
     }
 }
