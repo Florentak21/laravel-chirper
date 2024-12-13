@@ -68,11 +68,11 @@ class ChirpTest extends TestCase
     // test pour vérifier si les Chirps s'affichent sur la page d'accueil
     public function test_les_chirps_sont_affiches_sur_la_page_d_accueil()
     {
-        $user = User::factory()->create();
-        $this->actingAs($user);
-        $this->assertAuthenticatedAs($user);
+        $utilisateur = User::factory()->create();
+        $this->actingAs($utilisateur);
+        $this->assertAuthenticatedAs($utilisateur);
 
-        $chirps = ChirpFactory::new()->count(3)->create(['user_id' => $user->id]);
+        $chirps = ChirpFactory::new()->count(3)->create(['user_id' => $utilisateur->id]);
         
         $reponse = $this->get('/chirps/index');
         foreach ($chirps as $chirp) {
@@ -101,14 +101,45 @@ class ChirpTest extends TestCase
     // test pour permettre à un utilisateur de supprimer son propre chirp
     public function test_un_utilisateur_peut_supprimer_son_chirp()
     {
-    $utilisateur = User::factory()->create();
-    $chirp = ChirpFactory::new()->create(['user_id' => $utilisateur->id]);
-    $this->actingAs($utilisateur);
+        $utilisateur = User::factory()->create();
+        $chirp = ChirpFactory::new()->create(['user_id' => $utilisateur->id]);
+        $this->actingAs($utilisateur);
 
-    $reponse = $this->delete("/chirps/{$chirp->id}");
-    $reponse->assertStatus(302);
-    $this->assertDatabaseMissing('chirps', [
-    'id' => $chirp->id,
-    ]);
+        $reponse = $this->delete("/chirps/{$chirp->id}");
+        $reponse->assertStatus(302);
+        $this->assertDatabaseMissing('chirps', [
+        'id' => $chirp->id,
+        ]);
+    }
+
+    // test pour empecher un utilsateur de modifier ou de supprimer le Chirp d'u autre utilisateur
+    public function test_pour_empecher_un_utilisateur_de_modifier_le_chirp_d_un_autre_utilisateur()
+    {
+        $utilisateur1 = User::factory()->create();
+        $utilisateur2 = User::factory()->create();
+
+        $chirp = ChirpFactory::new()->create(['user_id' => $utilisateur1->id]);
+
+        $this->actingAs($utilisateur2);
+        $reponse = $this->put("/chirps/{$chirp->id}", [
+            'message' => 'Chirp modifié'
+        ]);
+     
+        $reponse->assertStatus(403);
+    }
+
+    public function test_pour_empecher_un_utilisateur_de_supprimer_le_chirp_d_un_autre_utilisateur()
+    {
+        $utilisateur1 = User::factory()->create();
+        $utilisateur2 = User::factory()->create();
+
+        $chirp = ChirpFactory::new()->create(['user_id' => $utilisateur1->id]);
+
+        $this->actingAs($utilisateur2);
+        $reponse = $this->delete("/chirps/{$chirp->id}", [
+            'message' => 'Chirp modifié'
+        ]);
+     
+        $reponse->assertStatus(403);
     }
 }
