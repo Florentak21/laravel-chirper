@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use Database\Factories\ChirpFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use App\Models\User;
+use App\Models\Chirp;
+
 
 class ChirpTest extends TestCase
 {
@@ -59,5 +62,20 @@ class ChirpTest extends TestCase
         'message' => str_repeat('a', 256)
         ]);
         $reponse->assertSessionHasErrors(['message']);
+    }
+
+
+    // test pour vérifier si les Chirps s'affichent sur la page d'accueil
+    public function test_les_chirps_sont_affiches_sur_la_page_d_accueil()
+    {
+        $user = User::factory()->create();
+        $chirps = ChirpFactory::new()->count(3)->create(['user_id' => $user->id]);
+        $this->actingAs($user);
+
+        $this->assertAuthenticatedAs($user);
+        $reponse = $this->get('chirps/index');
+        foreach ($chirps as $chirp) {
+            $reponse->assertSee($chirp->contenu);
+        }
     }
 }
