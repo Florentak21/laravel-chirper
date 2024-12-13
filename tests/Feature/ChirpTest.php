@@ -30,15 +30,15 @@ class ChirpTest extends TestCase
         $this->actingAs($utilisateur);
 
         // Envoyer une requête POST pour créer un chirp
-            $reponse = $this->post('/chirps', [
-        'message' => 'Mon premier chirp !'
+        $reponse = $this->post('/chirps', [
+            'message' => 'Mon premier chirp !'
         ]);
 
         // Vérifier que le chirp a été ajouté à la base de donnée
         $reponse->assertStatus(302);
         $this->assertDatabaseHas('chirps', [
-        'message' => 'Mon premier chirp !',
-        'user_id' => $utilisateur->id,
+            'message' => 'Mon premier chirp !',
+            'user_id' => $utilisateur->id,
         ]);
     }
 
@@ -48,7 +48,7 @@ class ChirpTest extends TestCase
         $utilisateur = User::factory()->create();
         $this->actingAs($utilisateur);
         $reponse = $this->post('/chirps', [
-        'message' => ''
+            'message' => ''
         ]);
         $reponse->assertSessionHasErrors(['message']);
     }
@@ -59,7 +59,7 @@ class ChirpTest extends TestCase
         $utilisateur = User::factory()->create();
         $this->actingAs($utilisateur);
         $reponse = $this->post('/chirps', [
-        'message' => str_repeat('a', 256)
+            'message' => str_repeat('a', 256)
         ]);
         $reponse->assertSessionHasErrors(['message']);
     }
@@ -87,14 +87,14 @@ class ChirpTest extends TestCase
         $chirp = ChirpFactory::new()->create(['user_id' => $utilisateur->id]);
         $this->actingAs($utilisateur);
         $reponse = $this->put("/chirps/{$chirp->id}", [
-        'message' => 'Chirp modifié'
+            'message' => 'Chirp modifié'
         ]);
         $reponse->assertStatus(302);
 
         // Vérifie si le chirp existe dans la base de donnée.
         $this->assertDatabaseHas('chirps', [
-        'id' => $chirp->id,
-        'message' => 'Chirp modifié',
+            'id' => $chirp->id,
+            'message' => 'Chirp modifié',
         ]);
     }
 
@@ -108,11 +108,11 @@ class ChirpTest extends TestCase
         $reponse = $this->delete("/chirps/{$chirp->id}");
         $reponse->assertStatus(302);
         $this->assertDatabaseMissing('chirps', [
-        'id' => $chirp->id,
+            'id' => $chirp->id,
         ]);
     }
 
-    // test pour empecher un utilsateur de modifier ou de supprimer le Chirp d'u autre utilisateur
+    // test pour empecher un utilsateur de modifier le Chirp d'u autre utilisateur
     public function test_pour_empecher_un_utilisateur_de_modifier_le_chirp_d_un_autre_utilisateur()
     {
         $utilisateur1 = User::factory()->create();
@@ -128,6 +128,7 @@ class ChirpTest extends TestCase
         $reponse->assertStatus(403);
     }
 
+    // test pour empecher un utilsateur de supprimer le Chirp d'u autre utilisateur
     public function test_pour_empecher_un_utilisateur_de_supprimer_le_chirp_d_un_autre_utilisateur()
     {
         $utilisateur1 = User::factory()->create();
@@ -141,5 +142,30 @@ class ChirpTest extends TestCase
         ]);
      
         $reponse->assertStatus(403);
+    }
+
+
+    // test empechant un Chirp d'avoir un contenu vide lors de sa modification
+    public function test_un_chirp_ne_peut_pas_avoir_un_contenu_vide_lors_de_sa_modification()
+    {
+        $utilisateur = User::factory()->create();
+        $chirp = ChirpFactory::new()->create(['user_id' => $utilisateur->id]);
+        $this->actingAs($utilisateur);
+        $reponse = $this->put("/chirps/{$chirp->id}", [
+            'message' => ''
+        ]);
+        $reponse->assertSessionHasErrors(['message']);
+    }
+
+    // test pour empecher le contenu d'un Chirp de dépasser 255 caractères lors de sa modifiaction
+    public function test_un_chirp_ne_peut_pas_depasse_255_caracteres_lors_de_sa_modification()
+    {
+        $utilisateur = User::factory()->create();
+        $chirp = ChirpFactory::new()->create(['user_id' => $utilisateur->id]);
+        $this->actingAs($utilisateur);
+        $reponse = $this->put("/chirps/{$chirp->id}", [
+            'message' => str_repeat('a', 256)
+        ]);
+        $reponse->assertSessionHasErrors(['message']);
     }
 }
