@@ -16,8 +16,15 @@ class ChirpController extends Controller
 
      public function index(): View
     {
+        // return view('chirps.index', [
+        //     'chirps' => Chirp::with('user')->latest()->get(),
+        // ]);
+
         return view('chirps.index', [
-            'chirps' => Chirp::with('user')->latest()->get(),
+            'chirps' => Chirp::with('user')
+                ->where('created_at', '<=', now()->subDays(7))
+                ->latest()
+                ->get(),
         ]);
     }
 

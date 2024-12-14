@@ -7,7 +7,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use App\Models\User;
-use App\Models\Chirp;
 
 
 class ChirpTest extends TestCase
@@ -186,5 +185,29 @@ class ChirpTest extends TestCase
         $this->assertDatabaseMissing('chirps', [
             'message' => 'Chirp numéro 11',
         ]);
-    }    
+    }
+
+    // test pour afficher uniquemeent les Chirps créé lors des 7 derniers jours
+    public function test_afficher_les_chirps_cree_lors_des_7_derniers_jours()
+    {
+        $utilisateur = User::factory()->create();
+        $this->actingAs($utilisateur);
+
+        ChirpFactory::new()->count(5)->create([
+            'user_id' => $utilisateur->id,
+            'created_at' => now()->subDays(10)
+        ]);
+
+        $reponse = $this->get('/chirps');
+        $reponse->assertOk();
+
+        $chirps = $reponse->viewData('chirps');
+        $this->assertCount(5, $chirps);
+
+        foreach ($chirps as $chirp) {
+            $this->assertTrue($chirp->created_at->lessThanOrEqualTo(now()->subDays(7)));
+        }
+
+    }
+
 }
